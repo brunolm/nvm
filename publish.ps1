@@ -1,0 +1,1 @@
+Publish-Module -Name nvm -NuGetApiKey $env:POWERSHELL_GALLERY_KEY;
