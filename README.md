@@ -2,6 +2,12 @@
 
 Manage node installations (downloads zip files).
 
+## Install
+
+```
+Install-Module -Name power-nvm
+```
+
 ## Commands
 
 ```powershell
