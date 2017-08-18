@@ -13,6 +13,8 @@ nvm setdir <Path>       # set NODE main dir
 nvm use <Version>       # use NODE version
 ```
 
+More help: `nvm <command> -help`
+
 ## Examples
 
 ```
