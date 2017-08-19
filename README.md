@@ -63,6 +63,13 @@ nvm default v8
 
 nvm setdir "C:\Program Files\nodejs"
 
+nvm uninstall latest
+nvm uninstall 8
+nvm uninstall 8.4
+nvm uninstall 8.4.0
+nvm uninstall v8.4.0
+nvm uninstall v8
+
 nvm use # reads version from .nvmrc file
 nvm use default
 nvm use latest
@@ -71,4 +78,10 @@ nvm use 8.4
 nvm use 8.4.0
 nvm use v8.4.0
 nvm use v8
+```
+
+### .nvmrc file example
+
+```
+v8.4.0
 ```

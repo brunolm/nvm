@@ -268,6 +268,48 @@ function Set-NodeDir(
     Add-NodeDirToPath
 }
 
+
+<#
+.Synopsis
+    Install node in versions folder under node main dir
+.Description
+    Downloads node zip file and extracts to node main dir under versions folder.
+    Then sets the path (of the current session) to the extracted folder.
+.Parameter $Version
+    Node version to install.
+.Example
+    nvm install latest
+.Example
+    nvm install 8
+.Example
+    nvm install 8.4
+.Example
+    nvm install 8.4.0
+.Example
+    nvm install v8.4.0
+.Example
+    nvm install v8
+#>
+function Uninstall-Node(
+    [string]
+    [Parameter(mandatory=$true)]
+    [ValidatePattern('^(v?\d{1,2}([.]\d+){0,2})|latest$')]
+    $Version
+) {
+    $versionsDir = Get-NodeVersionsDir;
+
+    if ($Version -eq "latest") {
+        $versionToUninstall = (Get-InstalledNode | Select-Object -First 1).Version;
+    }
+    else {
+        $versionToUninstall = (Get-InstalledNode $Version | Select-Object -First 1).Version;
+    }
+
+    $pathToUninstall = (Join-Path $versionsDir $versionToUninstall);
+
+    Remove-Item $pathToUninstall -Recurse -Force
+}
+
 <#
 .Synopsis
     Set the default node installation on node dir
@@ -344,6 +386,7 @@ $commandMap = @{
     ls = "Get-InstalledNode";
     "ls-remote" = "Get-NodeVersions";
     setdir = "Set-NodeDir";
+    uninstall = "Uninstall-Node";
     use = "Use-Node";
 };
 
@@ -371,6 +414,7 @@ function nvm(
         "ls-remote",
         "ls",
         "setdir",
+        "uninstall",
         "use"
     )]
     $Command,
