@@ -25,7 +25,7 @@ nvm install <Version>   # install version
 nvm ls [Filter]         # list installed versions
 nvm ls-remote [Filter]  # list released versions
 nvm setdir <Path>       # set NODE main dir
-nvm use <Version>       # use NODE version
+nvm use [Version]       # use NODE version (supports .nvmrc)
 ```
 
 More help: `nvm <command> -help`
@@ -63,6 +63,7 @@ nvm default v8
 
 nvm setdir "C:\Program Files\nodejs"
 
+nvm use # reads version from .nvmrc file
 nvm use default
 nvm use latest
 nvm use 8
