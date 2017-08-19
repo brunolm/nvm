@@ -25,6 +25,7 @@ nvm install <Version>   # install version
 nvm ls [Filter]         # list installed versions
 nvm ls-remote [Filter]  # list released versions
 nvm setdir <Path>       # set NODE main dir
+nvm uninstall <Version> # remove installation folder of a specific version
 nvm use [Version]       # use NODE version (supports .nvmrc)
 ```
 
