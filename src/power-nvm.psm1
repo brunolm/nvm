@@ -292,10 +292,25 @@ function Set-NodeDir(
 #>
 function Use-Node(
     [string]
-    [Parameter(mandatory=$true)]
     [ValidatePattern('^(v?\d{1,2}([.]\d+){0,2})|latest|default$')]
     $Version
 ) {
+    if (!$Version) {
+        # Look for .nvmrc
+        $nvmrc = Join-Path $pwd ".nvmrc";
+        if (Test-Path $nvmrc -PathType Leaf) {
+            $rcVersion = (Get-Content $nvmrc) -split "`n" | Select-Object -First 1;
+
+            if ($rcVersion) {
+                return Use-Node $rcVersion;
+            }
+
+            throw ".nvmrc is empty";
+        }
+
+        throw ".nvmrc file not found";
+    }
+
     $versionsDir = Get-NodeVersionsDir;
 
     if ($Version -ne "default") {
