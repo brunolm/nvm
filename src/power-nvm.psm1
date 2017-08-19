@@ -159,16 +159,15 @@ function Install-Node(
     Write-Host "Installing..."
     $node | Select-Object -Property version,npm,v8,date | Format-List
 
-    $verstionToInstall = $node.version;
+    $versionToInstall = $node.version;
 
     $versionTag = $( if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" } );
-    $downloadUrl = "https://nodejs.org/dist/$verstionToInstall/node-$verstionToInstall-win-$versionTag.zip";
+    $downloadUrl = "https://nodejs.org/dist/$versionToInstall/node-$versionToInstall-win-$versionTag.zip";
 
-    $dest = (join-path $env:TEMP "node-${verstionToInstall}.zip");
+    $dest = (Join-Path $env:TEMP "node-${versionToInstall}.zip");
     Invoke-WebRequest $downloadUrl -OutFile $dest;
 
     $versionsDir = Get-NodeVersionsDir;
-    echo $versionsDir;
 
     try {
         7z x $dest -o"$versionsDir" -r -aoa
@@ -177,9 +176,9 @@ function Install-Node(
         Expand-Archive $zip -DestinationPath "$versionsDir" -Force
     }
 
-    $folder = Get-ChildItem $versionsDir | Where-Object { $_.Name -match "node-$verstionToInstall" }
+    $folder = Get-ChildItem $versionsDir | Where-Object { $_.Name -match "node-$versionToInstall" }
 
-    $targetDir = (Join-Path $folder[0].Parent.FullName $verstionToInstall);
+    $targetDir = (Join-Path $folder[0].Parent.FullName $versionToInstall);
 
     if (Test-Path $targetDir) {
         Remove-Item -Force -Recurse $targetDir;
