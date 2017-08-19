@@ -1,5 +1,3 @@
-Import-Module -Force .\src\power-nvm.psm1
-
 InModuleScope power-nvm {
     Describe "Given ls" {
         Mock Get-ChildItem {
@@ -83,5 +81,3 @@ InModuleScope power-nvm {
         }
     }
 }
-
-Start-Sleep 5

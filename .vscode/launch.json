@@ -4,11 +4,11 @@
         {
             "type": "PowerShell",
             "request": "launch",
-            "name": "PowerShell Launch Current File in Temporary Console",
-            "script": "${file}",
+            "name": "Test",
+            "script": "${workspaceRoot}/test.ps1",
             "args": [],
-            "cwd": "${file}",
-            "createTemporaryIntegratedConsole": true
+            "cwd": "${workspaceRoot}",
+            "createTemporaryIntegratedConsole": false
         }
     ]
 }
