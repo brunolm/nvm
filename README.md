@@ -8,6 +8,15 @@ Manage node installations (downloads zip files).
 Install-Module -Name power-nvm
 ```
 
+### First time install
+
+If you don't have node yet on your machine you might want to execute
+
+```
+nvm install latest
+nvm default latest
+```
+
 ## Commands
 
 ```powershell
