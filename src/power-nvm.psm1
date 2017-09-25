@@ -173,7 +173,7 @@ function Install-Node(
         7z x $dest -o"$versionsDir" -r -aoa
     }
     catch {
-        Expand-Archive $zip -DestinationPath "$versionsDir" -Force
+        Expand-Archive $dest -DestinationPath "$versionsDir" -Force
     }
 
     $folder = Get-ChildItem $versionsDir | Where-Object { $_.Name -match "node-$versionToInstall" }
@@ -253,9 +253,9 @@ function Set-NodeDir(
         do
         {
             $shouldCreate = Read-Host "This path doesn't exists, would you like to create? (Y/n)"
-        } while (($shouldCreate -ne "y") -and ($shouldCreate -ne "n"));
+        } while (($shouldCreate -ne "y") -and ($shouldCreate -ne "n") -and ($shouldCreate -ne ""));
 
-        if ($shouldCreate -eq "y") {
+        if ($shouldCreate -eq "y" -or !$shouldCreate) {
             New-Item $dir -ItemType Directory
         }
         else {
@@ -264,7 +264,7 @@ function Set-NodeDir(
     }
 
     $env:NODE_DIR = $Path;
-    [Environment]::SetEnvironmentVariable('NODE_DIR', $Path, [EnvironmentVariableTarget]::User);
+    [Environment]::SetEnvironmentVariable('NODE_DIR', $Path, [EnvironmentVariableTarget]::Machine);
     Add-NodeDirToPath
 }
 
@@ -421,6 +421,14 @@ function nvm(
     [Switch]
     $Help
 ) {
+    if (!$env:NODE_DIR) {
+        Write-Host -ForegroundColor Yellow "[WARNING] env:NODE_DIR not found, trying to set to $dir"
+
+        $dir = Join-Path $env:ProgramFiles "nodejs";
+        $env:NODE_DIR = $dir;
+        Set-NodeDir $dir
+    }
+
     if (!(Test-Path $env:NODE_DIR)) {
         if ($Command -ne "setdir") {
             Write-Host "Node dir must be set first, nvm setdir <Path>"
