@@ -1,4 +1,11 @@
-﻿function Add-DirToPath($Path, [Switch] $Permanent) {
+﻿function Unzip
+{
+    param([string]$zipfile, [string]$outpath)
+
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
+}
+
+function Add-DirToPath($Path, [Switch] $Permanent) {
     Remove-DirFromPath $Path
 
     $newPath = @($Path) + ($env:Path -split ";");
@@ -173,7 +180,7 @@ function Install-Node(
         7z x $dest -o"$versionsDir" -r -aoa
     }
     catch {
-        Expand-Archive $dest -DestinationPath "$versionsDir" -Force
+        Unzip $dest $versionsDir
     }
 
     $folder = Get-ChildItem $versionsDir | Where-Object { $_.Name -match "node-$versionToInstall" }
