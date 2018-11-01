@@ -90,7 +90,7 @@ function Get-InstalledNode(
     $dir = Get-NodeVersionsDir;
     Get-ChildItem $dir `
         | Where-Object { $_.Name -like "$Filter*" } `
-        | Sort-Object -Property Name -Descending `
+        | Sort-Object { [Version] ($_.Name -replace 'v', '') } -Descending `
         | Select-Object -Property @{name="Version"; expression={ $_.Name }}
 }
 
