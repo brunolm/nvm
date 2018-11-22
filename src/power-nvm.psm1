@@ -8,7 +8,9 @@
 function Add-DirToPath($Path, [Switch] $Permanent) {
     Remove-DirFromPath $Path
 
-    $newPath = @($Path) + ($env:Path -split ";");
+    $newPath = $env:Path -split ";";
+    $newPath = ($newPath | Where-Object { $_ -notlike "$env:NODE_DIR*" -and $_.Length -gt 0 });
+    $newPath = @($Path) + ($newPath);
     $newPath = $newPath -join ";";
 
     $env:Path = $newPath;
@@ -59,6 +61,24 @@ function Remove-NodeDirFromPath() {
     Remove-DirFromPath $env:NODE_DIR -Permanent
 }
 
+function YesNoQuestion($question, $message, $defaultOpt = 1) {
+    $choices = New-Object Collections.ObjectModel.Collection[Management.Automation.Host.ChoiceDescription]
+    $choices.Add((New-Object Management.Automation.Host.ChoiceDescription -ArgumentList '&Yes', 'Continue'))
+    $choices.Add((New-Object Management.Automation.Host.ChoiceDescription -ArgumentList '&No', 'Cancel'))
+
+    $decision = $Host.UI.PromptForChoice($question, $message, $choices, $defaultOpt)
+    
+    if ($decision -eq 0) {
+        return $true;
+    }
+
+    return $false;
+}
+
+function Add-PermanentEnv($Key, $Value) {
+    [Environment]::SetEnvironmentVariable($Key, $Value, [EnvironmentVariableTarget]::Machine);
+    Set-Item "env:$Key" $Value
+}
 
 <#
 .Synopsis
@@ -152,7 +172,10 @@ function Install-Node(
     [ValidatePattern('^(v?\d{1,2}([.]\d+){0,2})|latest$')]
     $Version
 ) {
+    $global:progressPreference = 'silentlyContinue';
+    Write-Host "Retrieving versions...";
     $versions = Invoke-WebRequest -Uri https://nodejs.org/dist/index.json | ConvertFrom-Json;
+    $global:progressPreference = 'Continue';
 
     if ($Version -eq "latest") {
         $node = $versions | Select-Object -First 1
@@ -167,15 +190,23 @@ function Install-Node(
     $node | Select-Object -Property version,npm,v8,date | Format-List
 
     $versionToInstall = $node.version;
-
-    $versionTag = $( if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" } );
-    $downloadUrl = "https://nodejs.org/dist/$versionToInstall/node-$versionToInstall-win-$versionTag.zip";
-
-    $dest = (Join-Path $env:TEMP "node-${versionToInstall}.zip");
-    Invoke-WebRequest $downloadUrl -OutFile $dest;
-
     $versionsDir = Get-NodeVersionsDir;
 
+    $finalDir = Join-Path $versionsDir $versionToInstall;
+
+    if (Test-Path $finalDir -PathType Container) {
+        if (!(YesNoQuestion "Version already exists. Overwrite?" "Globally installed packages will be lost.")) {
+            Write-Host "Cancelling..."
+            return;
+        }
+    }
+    
+    $versionTag = $( if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" } );
+    $downloadUrl = "https://nodejs.org/dist/$versionToInstall/node-$versionToInstall-win-$versionTag.zip";
+    
+    $dest = (Join-Path $env:TEMP "node-${versionToInstall}.zip");
+    Invoke-WebRequest $downloadUrl -OutFile $dest;
+    
     try {
         7z x $dest -o"$versionsDir" -r -aoa
     }
@@ -184,7 +215,6 @@ function Install-Node(
     }
 
     $folder = Get-ChildItem $versionsDir | Where-Object { $_.Name -match "node-$versionToInstall" }
-
     $targetDir = (Join-Path $folder[0].Parent.FullName $versionToInstall);
 
     if (Test-Path $targetDir) {
@@ -192,6 +222,42 @@ function Install-Node(
     }
 
     Move-Item $folder[0].FullName $targetDir;
+
+    _fixNpm $targetDir
+
+    if (YesNoQuestion "Would you like to make this version default?" "" 0) {
+        Set-NodeDefault $versionToInstall
+    }
+}
+function _sym(
+    [string]
+    [Parameter(mandatory=$true)]
+    $dir,
+
+    [string]
+    [Parameter(mandatory=$true)]
+    [ValidatePattern('^(npm|npx)([.]cmd)?$')]
+    $name
+) {
+    $dir = ($dir -replace "\\$","");
+    $target = "$dir\node_modules\npm\bin\$name";
+
+    if (!(Test-Path $target -PathType Leaf)) {
+        return;
+    }
+
+    Remove-Item "$dir\$name";
+    Remove-Item "$dir\$name.cmd";
+    New-Item -ItemType SymbolicLink -Path "$dir\$name" -Target $target;
+    New-Item -ItemType SymbolicLink -Path "$dir\$name.cmd" -Target "$target.cmd";
+}
+function _fixNpm(
+    [string]
+    [Parameter(mandatory=$true)]
+    $dir
+) {
+    _sym $dir "npm"
+    _sym $dir "npx"
 }
 
 <#
@@ -229,7 +295,8 @@ function Set-NodeDefault(
 
     $pathToInstall = (Join-Path $versionsDir $versionToInstall);
 
-    Get-ChildItem $pathToInstall | ForEach-Object { Copy-Item $_.FullName $env:NODE_DIR -Recurse -Force }
+    Add-DirToPath $pathToInstall -Permanent
+    Add-PermanentEnv "NODE_DEFAULT" $pathToInstall
 }
 
 <#
@@ -278,24 +345,24 @@ function Set-NodeDir(
 
 <#
 .Synopsis
-    Install node in versions folder under node main dir
+    Unonstall node in versions folder under node main dir
 .Description
     Downloads node zip file and extracts to node main dir under versions folder.
     Then sets the path (of the current session) to the extracted folder.
 .Parameter $Version
-    Node version to install.
+    Node version to Uninstall.
 .Example
-    nvm install latest
+    nvm Uninstall latest
 .Example
-    nvm install 8
+    nvm Uninstall 8
 .Example
-    nvm install 8.4
+    nvm Uninstall 8.4
 .Example
-    nvm install 8.4.0
+    nvm Uninstall 8.4.0
 .Example
-    nvm install v8.4.0
+    nvm Uninstall v8.4.0
 .Example
-    nvm install v8
+    nvm Uninstall v8
 #>
 function Uninstall-Node(
     [string]
@@ -370,6 +437,9 @@ function Use-Node(
             $versionToInstall = (Get-InstalledNode $Version | Select-Object -First 1).Version;
         }
         $pathToInstall = (Join-Path $versionsDir $versionToInstall);
+    }
+    else {
+        $pathToInstall = $env:NODE_DEFAULT;
     }
 
     # Node might not yet be installed
