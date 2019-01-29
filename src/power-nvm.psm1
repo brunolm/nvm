@@ -45,6 +45,7 @@ function Get-YesNo($Question) {
 
 function Remove-DirFromPath($Path, [Switch] $Permanent) {
     $newPath = ($env:Path -split ";") | Where-Object { $_ -ne "$Path\" -and $_ -ne $Path }
+    $newPath = $newPath -join ";"
 
     $env:PathBackup = $env:Path;
     $env:Path = $newPath -join ";";
