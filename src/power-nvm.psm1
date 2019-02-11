@@ -7,11 +7,17 @@ function Unzip
 }
 
 function Add-DirToPath($Path, [Switch] $Permanent) {
-    Remove-DirFromPath $Path
+    if ($Path) {
+        Remove-DirFromPath $Path
+    }
 
     $newPath = $env:Path -split ";";
-    $newPath = ($newPath | Where-Object { $_ -notlike "$env:NODE_DIR*" -and $_.Length -gt 0 });
-    $newPath = @($Path) + ($newPath);
+    $newPath = ($newPath | Where-Object { $_ -notlike "$env:NODE_DIR\version*" -and $_.Length -gt 0 });
+
+    if ($Path) {
+        $newPath = @($Path) + ($newPath);
+    }
+
     $newPath = $newPath -join ";";
 
     $env:Path = $newPath;
@@ -21,9 +27,22 @@ function Add-DirToPath($Path, [Switch] $Permanent) {
     }
 }
 
+function Add-NodeDirToDefault($versionDir) {
+    $defaultDir = Join-Path $env:NODE_DIR "default"
+
+    $defaultDirInfo = Get-Item $defaultDir
+    if ($defaultDirInfo) {
+        $defaultDirInfo.Delete()
+    }
+    
+    New-Item -Path $defaultDir -ItemType SymbolicLink -Value $versionDir | Out-Null
+}
 function Add-NodeDirToPath() {
+    $defaultDir = Join-Path $env:NODE_DIR "default"
+
     Remove-NodeDirFromPath
     Add-DirToPath $env:NODE_DIR -Permanent
+    Add-DirToPath $defaultDir -Permanent
 }
 
 function Get-NodeVersionsDir() {
@@ -60,7 +79,9 @@ function Remove-NodeDirFromPath() {
         return;
     }
 
+    $defaultDir = Join-Path $env:NODE_DIR "default"
     Remove-DirFromPath $env:NODE_DIR -Permanent
+    Remove-DirFromPath $defaultDir -Permanent
 }
 
 function YesNoQuestion($question, $message, $defaultOpt = 1) {
@@ -298,6 +319,7 @@ function Set-NodeDefault(
     $pathToInstall = (Join-Path $versionsDir $versionToInstall);
 
     Add-DirToPath $pathToInstall -Permanent
+    Add-NodeDirToDefault $pathToInstall;
     Add-PermanentEnv "NODE_DEFAULT" $pathToInstall
 }
 
@@ -318,10 +340,6 @@ function Set-NodeDir(
     $Path
 ) {
     $dir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path);
-
-    if ($env:NODE_DIR) {
-        Remove-NodeDirFromPath
-    }
 
     if (!(Test-Path $dir -PathType Container)) {
         Write-Host "$dir not found"
@@ -441,15 +459,9 @@ function Use-Node(
         $pathToInstall = (Join-Path $versionsDir $versionToInstall);
     }
     else {
-        $pathToInstall = $env:NODE_DEFAULT;
+        Add-DirToPath
+        return
     }
-
-    # Node might not yet be installed
-    try {
-        $currentNodeVersion = node -v;
-        Remove-DirFromPath (join-path $versionsDir $currentNodeVersion)
-    }
-    catch { }
 
     if ($pathToInstall) {
         Add-DirToPath $pathToInstall;
