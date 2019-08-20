@@ -164,7 +164,7 @@ function Get-NodeVersions(
     [ValidatePattern('^v?\d{1,2}([.]\d+){0,2}$')]
     $Filter
 ) {
-    $versions = Invoke-WebRequest -Uri https://nodejs.org/dist/index.json | ConvertFrom-Json
+    $versions = Invoke-WebRequest -UseBasicParsing -Uri https://nodejs.org/dist/index.json | ConvertFrom-Json
     $versions | Where-Object { $_.version.Contains($Filter) } | Select-Object -Property version,npm,date
 }
 
@@ -197,7 +197,7 @@ function Install-Node(
 ) {
     $global:progressPreference = 'silentlyContinue';
     Write-Host "Retrieving versions...";
-    $versions = Invoke-WebRequest -Uri https://nodejs.org/dist/index.json | ConvertFrom-Json;
+    $versions = Invoke-WebRequest -UseBasicParsing -Uri https://nodejs.org/dist/index.json | ConvertFrom-Json;
     $global:progressPreference = 'Continue';
 
     if ($Version -eq "latest") {
@@ -228,7 +228,7 @@ function Install-Node(
     $downloadUrl = "https://nodejs.org/dist/$versionToInstall/node-$versionToInstall-win-$versionTag.zip";
     
     $dest = (Join-Path $env:TEMP "node-${versionToInstall}.zip");
-    Invoke-WebRequest $downloadUrl -OutFile $dest;
+    Invoke-WebRequest -UseBasicParsing $downloadUrl -OutFile $dest;
     
     try {
         7z x $dest -o"$versionsDir" -r -aoa
