@@ -1,3 +1,9 @@
+# DEPRECATED
+
+This project has some issues with initial installation and is slow. Instead of it use [nvs](https://github.com/jasongin/nvs).
+
+---
+
 # power-nvm
 
 power-nvm is a `nvm` version for Windows. It manages node versions on your machine.
